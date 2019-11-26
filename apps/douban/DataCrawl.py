@@ -59,7 +59,8 @@ class DataCrawler(object):
 
     def getRestApi(self) -> dict:
         """
-        for GET the Restful API json response
+        For GET the Restful API json response.
+        Slight difference with get other html page is it returns a dict not an entire html.
         """
         _json = {}
         print(self.__version__)
@@ -88,6 +89,10 @@ class DataCrawler(object):
         return _response
 
     def getItemList(self) -> list:
+        '''
+        This method is to get the Tv or Movie URL list.
+        This method is app-specific, for other website, it may change the attributes to get desired response.
+        '''
         _json_list = self.getRestApi()["subjects"]
         return [item["url"] for item in _json_list]
 
@@ -102,6 +107,8 @@ class DataCrawler(object):
         # get base info
         url_list = self.getItemList()
         for surl in url_list:
+            print('---------------------')
+
             sr = self.getHtmlSession(surl)
             _info = sr.html.find('#info',first=True)
             _info_list = _info.text.split('\n')

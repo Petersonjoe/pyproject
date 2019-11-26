@@ -47,19 +47,26 @@ headers = [
     "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
 ]
 
-
-
 selected_header = {'User-Agent': random.choice(headers)}
 print(f'User-Agent re-direct to: {selected_header["User-Agent"]}')
 
+
+#-------------- douban URL element --------------#
+# note that, modern web browser always show you the ccs selector when you inspecting elements of a web page
 from requests.exceptions import HTTPError
-session = HTMLSession()
+spider_session = HTMLSession()
 
 url = 'https://movie.douban.com/subject/30401122/'
-response = session.get(url,headers=selected_header)
-tv_info = response.html.find('#info',first=True)
+response = spider_session.get(url,headers=selected_header)
+
+#-------------- base info --------------#
+# base info selection
+tv_id = url.split('/')[-2]  # tv id
+tv_header = response.html.find('div#content>h1')  # title
+tv_info = response.html.find('#info',first=True)  # dimension info
 info_list = tv_info.text.split('\n')
 
+# base info assembling
 def info_split(item: str = None) -> list:
     if ':' in item:
         key = item.split(':')[0].strip()
@@ -69,11 +76,12 @@ def info_split(item: str = None) -> list:
         return None
 
 base_info = {}
+base_info["剧名"] = tv_header[0].text.strip()
 for x in info_list:
     if info_split(x):
         base_info[info_split(x)[0]]=info_split(x)[1]
 
-
+print(base_info["剧名"])
 print(base_info["导演"])
 print(base_info["编剧"])
 print(base_info["主演"])
@@ -82,17 +90,36 @@ print(base_info["制片国家/地区"])
 print(base_info["语言"])
 print(base_info["首播"])
 
+#-------------- rating summary --------------#
+# rating summary info selection
+rating_summ = {
+    "rat_lvl": [], # 5 star -- 1 star
+    "rat_pct": []  # 5* val -- 1* val
+}
+rating_num = response.html.find('strong.ll.rating_num')  # summary rating number
+print(float(rating_num[0].text))
+rating_pp = response.html.find('a.rating_people>span')  # number of rating people
+print(int(rating_pp[0].text))
+rating_dist = response.html.find('div.ratings-on-weight')  # rating distribution
+raw_dist = rating_dist[0].text.split('\n')
+for index, value in enumerate(raw_dist):
+    print(index, value)
+    if (index % 3) == 0:
+        rating_summ["rat_lvl"].append(value)
+    elif (index % 3) == 1:
+        rating_summ["rat_pct"].append(value)
+    else:
+        pass
+
+print(rating_summ)
+
+#-------------- comment section --------------#
+# get the url for comment section
+cmt_url = response.html.find('div.mod-hd h2 span.pl a')
+print(cmt_url[0])
+print(cmt_url[0].attrs["href"])
 
 
-
-
-
-
-
-
-
-
-
-
+spider_session.close()
 
 
